@@ -1,0 +1,1 @@
+export const credentials = {"apiKey" : "your credential"}
