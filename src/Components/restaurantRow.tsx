@@ -1,13 +1,11 @@
-import { Accordion, AccordionDetails, AccordionSummary, createStyles, makeStyles, Theme, Typography } from "@material-ui/core";
+import { Accordion, AccordionDetails, AccordionSummary, createStyles, Link, makeStyles, Theme, Typography } from "@material-ui/core";
 import React from "react";
 import { Restaurant } from "../types";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
+import MapIcon from "@material-ui/icons/PinDrop";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
-        root: {
-            width: '100%',
-        },
         heading: {
             fontSize: theme.typography.pxToRem(15),
             flexBasis: '90%',
@@ -22,6 +20,22 @@ const useStyles = makeStyles((theme: Theme) =>
         starHeading: {
             fontSize: theme.typography.pxToRem(15),
         },
+
+        details: {
+            display: "flex",
+            flexDirection: "column",
+        },
+        tagContainer: {
+            display: "flex",
+            flexWrap: "wrap"
+        },
+        tag: {
+            fontWeight: "bold"
+        },
+        place: {
+            display: "flex",
+            alignItems: "center"
+        }
     }),
 );
 
@@ -36,7 +50,7 @@ export function RestaurantRow(props: Props) {
     const { restaurant, expanded, onExpand } = props;
     const classes = useStyles();
 
-    console.log(restaurant.tags);
+    const place = restaurant.vicinity.split("<br/>").join(", ");
 
     return (
         <div>
@@ -49,11 +63,19 @@ export function RestaurantRow(props: Props) {
                     <Typography className={classes.secondaryHeading}>
                         {restaurant.distance} m</Typography>
                 </AccordionSummary>
-                <AccordionDetails>
-                    <Typography>
+                <AccordionDetails className={classes.details}>
+                    <Link href={`https://maps.google.com/?q=${place}`} color="inherit" target="_blank" rel="noopener">
+                        <Typography className={classes.place}>
+                            <MapIcon /> {place}
+                        </Typography>
+                    </Link>
+
+                    <Typography
+                        className={classes.tagContainer}
+                    >
                         {"tags" in restaurant ? restaurant.tags.map(
                             (tag) => {
-                                return (<span>#{tag.title} </span>)
+                                return (<span className={classes.tag}> #{tag.title}&nbsp;</span>)
                                     ;
                             }) : null}
                     </Typography>

@@ -1,18 +1,48 @@
 import React, { useCallback, useState } from "react";
-import { Button, InputAdornment, OutlinedInput, TextField } from '@material-ui/core';
+import { Button, InputAdornment, TextField, LinearProgress, makeStyles, createStyles, Theme } from '@material-ui/core';
 import axios from "axios";
-import { RestaurantRow } from "./restaurantRow";
 import { Restaurant } from "../types";
 import { credentials } from "../credentials";
 import { RestaurantList } from "./restaurantList";
 
-export function RestaurantFinder() {
-    const [latitude, setLatitude] = useState<string | number>(59.334591);
-    const [longitude, setLongitude] = useState<string | number>(18.063240);
-    const [isValidLatitude, setIsValidLatitude] = useState<boolean>(true);
-    const [isValidLongitude, setIsValidLongitude] = useState<boolean>(true);
 
-    const [restaurants, setRestaurants] = useState<Array<Restaurant>>([]);
+const useStyles = makeStyles((theme: Theme) =>
+    createStyles({
+        mainContainer: {
+            display: "flex",
+            flexDirection: "column",
+            border: "2px solid #3860bf",
+            borderRadius: 10,
+            padding: 8
+        },
+        inputRow: {
+            display: "flex",
+            justifyContent: "space-between"
+        },
+        input: {
+            margin: 8
+        },
+        spinner: {
+            alignSelf: "center",
+            margin: 8,
+            width: "100%"
+        },
+        separator: {
+            alignSelf: "center",
+            margin: 8
+        }
+    }),
+);
+
+export function RestaurantFinder() {
+    const classes = useStyles();
+    const [latitude, setLatitude] = useState<string | number>("");
+    const [longitude, setLongitude] = useState<string | number>("");
+    const [isValidLatitude, setIsValidLatitude] = useState<boolean>(false);
+    const [isValidLongitude, setIsValidLongitude] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [restaurants, setRestaurants] = useState<Array<Restaurant> | null>(null);
 
     const updateLatitude = (rawLatitude: string) => {
         let latitude = Number(rawLatitude);
@@ -35,7 +65,14 @@ export function RestaurantFinder() {
     }
 
     const getRestaurants = useCallback(
-        () => {
+        async () => {
+
+            if (!isValidLatitude || !isValidLongitude) {
+                alert("All field must be correct before looking for tasty restaurants!");
+                setIsLoading(false);
+                return;
+            }
+
             // radius of the circle
             let size = 10000;
             // our category
@@ -45,7 +82,10 @@ export function RestaurantFinder() {
 
             // Creating the url for the GET command
             let url = `https://places.ls.hereapi.com/places/v1/discover/explore?in=${latitude},${longitude};r=${size}&cat=${category}&size=${nb_result}&apiKey=${credentials.apiKey}`;
-            axios.get(url)
+
+            setIsLoading(true);
+
+            await axios.get(url)
                 .then(res => {
                     // We sort restaurants, closer first
                     let nearestrestaurants: Array<Restaurant> = res.data.results.items.sort((first: Restaurant, second: Restaurant) => first.distance - second.distance);
@@ -54,21 +94,26 @@ export function RestaurantFinder() {
                 }).catch((error) => {
                     alert("Couldn't fetch data from Here Api, maybe try to verify your internet connexion? \n " + error);
                 })
+
+            setIsLoading(false);
         }
         ,
-        [latitude, longitude]
+        [isValidLatitude, isValidLongitude, latitude, longitude]
     );
 
-
     function updateCurrentLocation(navigatorPosition: GeolocationPosition) {
+
         let { latitude, longitude } = navigatorPosition.coords;
-        setLatitude(latitude);
-        setLongitude(longitude);
+        updateLatitude(latitude.toString());
+        updateLongitude(longitude.toString());
+        setRestaurants(null);
+        setIsLoading(false);
     }
 
-    const getCurrentLocation = () => {
+    const getCurrentLocation = async () => {
+        setIsLoading(true);
         if (navigator.geolocation) {
-            navigator.permissions
+            await navigator.permissions
                 .query({ name: "geolocation" })
                 .then(function (res) {
                     if (res.state === "granted") {
@@ -83,21 +128,21 @@ export function RestaurantFinder() {
                     }
                 });
         } else {
-            alert("Sorry Not available!");
+            alert("Sorry geolocation is not available!");
         }
     }
 
     return (
         <div
-            style={{ display: "flex", flexDirection: "column", border: "2px solid black", borderRadius: 10, padding: 8 }}
+            className={classes.mainContainer}
         >
-
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className={classes.inputRow}>
                 <TextField
-                    style={{ margin: 8 }}
+                    className={classes.input}
                     placeholder="Latitude"
+                    label="Latitude"
                     error={!isValidLatitude}
-                    helperText={isValidLatitude ? null : "Incorrect latitude ([-90, 90])"}
+                    helperText={isValidLatitude ? null : "Choose latitude in [-90, 90]"}
                     value={latitude}
                     onChange={(event) => { updateLatitude(event.target.value); }}
                     InputProps={{
@@ -107,10 +152,11 @@ export function RestaurantFinder() {
                 />
 
                 <TextField
-                    style={{ margin: 8 }}
+                    className={classes.input}
                     placeholder="Longitude"
+                    label="Longitude"
                     error={!isValidLongitude}
-                    helperText={isValidLongitude ? null : "Incorrect longitude ([-90, 90])"}
+                    helperText={isValidLongitude ? null : "Choose longitude in [-180, 180]"}
                     value={longitude}
                     onChange={(event) => { updateLongitude(event.target.value); }}
                     InputProps={{
@@ -121,7 +167,7 @@ export function RestaurantFinder() {
 
 
                 <Button
-                    style={{ margin: 8 }}
+                    className={classes.input}
                     variant="outlined"
                     color="secondary"
                     onClick={getCurrentLocation}
@@ -139,11 +185,19 @@ export function RestaurantFinder() {
                 I'm hungry, where can I eat?!
             </Button>
 
-            <span style={{ alignSelf: "center", margin: 8 }}>
-                🍴
-            </span>
+            {
+                isLoading
+                    ? <LinearProgress color="secondary" className={classes.spinner} />
+                    :
+                    <span className={classes.separator}>
+                        🍴
+                    </span>
+            }
 
-            <RestaurantList restaurants={restaurants} />
+            {
+                restaurants === null ? null : <RestaurantList restaurants={restaurants} />
+            }
+
         </div>
 
     );
