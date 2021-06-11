@@ -121,7 +121,6 @@ export function RestaurantFinder() {
                 (error) => {
                     setIsLoading(false);
                 if (error.code === error.PERMISSION_DENIED) {
-                    alert('Geolocation has been disabled on this page. If you are using macos, please, check your system geolocalisation preferences');
                 } else {
                     alert('Unable to find your position, try again later.');
                 }
@@ -131,6 +130,30 @@ export function RestaurantFinder() {
         } else {
             setIsLoading(false);
             alert("Sorry geolocation is not available for your browser!");
+        }
+
+
+        if (navigator.geolocation) {
+            await navigator.permissions
+                .query({ name: "geolocation" })
+                .then(function (res) {
+                    if (res.state === "granted") {
+                        navigator.geolocation.getCurrentPosition(updateCurrentLocation);
+                    } else if (res.state === "prompt") {
+                        navigator.geolocation.getCurrentPosition(
+                            updateCurrentLocation,
+                            () => { alert('Geolocation has been disabled on this page. If you are using macos, please, check your system geolocalisation preferences');},
+                            {
+                                timeout: 10000
+                            }
+                        
+                            );
+                    } else if (res.state === "denied") {
+                        alert("You need to give this app the right to access your current location to do so");
+                    }
+                });
+        } else {
+            alert("Sorry geolocation is not available!");
         }
     }
 
