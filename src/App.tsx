@@ -21,7 +21,8 @@ const useStyles = makeStyles((theme: Theme) =>
     toolbar: {
       display: "flex",
       justifyContent: "space-evenly",
-      alignItems: "center"
+      alignItems: "center",
+      flexWrap: "wrap"
     },
     contact: {
       display: "flex",

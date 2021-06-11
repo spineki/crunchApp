@@ -10,6 +10,7 @@ const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         mainContainer: {
             display: "flex",
+            margin: 8,
             flexDirection: "column",
             border: "2px solid #3860bf",
             borderRadius: 10,
@@ -17,6 +18,7 @@ const useStyles = makeStyles((theme: Theme) =>
         },
         inputRow: {
             display: "flex",
+            flexWrap: "wrap",
             justifyContent: "space-between"
         },
         input: {
@@ -112,23 +114,23 @@ export function RestaurantFinder() {
 
     const getCurrentLocation = async () => {
         setIsLoading(true);
+
         if (navigator.geolocation) {
-            await navigator.permissions
-                .query({ name: "geolocation" })
-                .then(function (res) {
-                    if (res.state === "granted") {
-                        navigator.geolocation.getCurrentPosition(updateCurrentLocation);
-                    } else if (res.state === "prompt") {
-                        navigator.geolocation.getCurrentPosition(
-                            updateCurrentLocation,
-                            () => { alert("You need to give this app the right to access your current location to do so") },
-                        );
-                    } else if (res.state === "denied") {
-                        alert("You need to give this app the right to access your current location to do so");
-                    }
-                });
+            navigator.geolocation.getCurrentPosition(
+                updateCurrentLocation,
+                (error) => {
+                    setIsLoading(false);
+                if (error.code === error.PERMISSION_DENIED) {
+                    alert('Geolocation has been disabled on this page. If you are using macos, please, check your system geolocalisation preferences');
+                } else {
+                    alert('Unable to find your position, try again later.');
+                }
+            }, {
+                timeout: 10000
+            });
         } else {
-            alert("Sorry geolocation is not available!");
+            setIsLoading(false);
+            alert("Sorry geolocation is not available for your browser!");
         }
     }
 
