@@ -32,6 +32,10 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 
+/**
+ * Main app component
+ * @returns App Component
+ */
 function App() {
   const classes = useStyles();
 

@@ -17,12 +17,15 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-
-
 type Props = {
     restaurants: Array<Restaurant>
 }
 
+/**
+ * A component to display a list of Restaurants
+ * @param props {Props}
+ * @returns 
+ */
 export function RestaurantList(props: Props) {
     const classes = useStyles();
     const { restaurants } = props;

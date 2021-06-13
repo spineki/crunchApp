@@ -36,6 +36,9 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
+/**
+ * A component to find and display nearest restaurants
+ */
 export function RestaurantFinder() {
     const classes = useStyles();
     const [latitude, setLatitude] = useState<string | number>("");
@@ -46,7 +49,11 @@ export function RestaurantFinder() {
 
     const [restaurants, setRestaurants] = useState<Array<Restaurant> | null>(null);
 
-    const updateLatitude = (rawLatitude: string) => {
+    /**
+     * Check if given latitude is correct and update the state accordingly
+     * @param {string} rawLatitude - input latitude
+     */
+    const updateLatitude = useCallback((rawLatitude: string) => {
         let latitude = Number(rawLatitude);
         if (rawLatitude !== "" && !isNaN(latitude) && latitude <= 90.0 && latitude >= -90.0) {
             setIsValidLatitude(true);
@@ -55,8 +62,13 @@ export function RestaurantFinder() {
         }
         setLatitude(rawLatitude);
     }
+    , []);
 
-    const updateLongitude = (rawLongitude: string) => {
+    /**
+     * Check if given longitude is correct and update the state accordingly
+     * @param {string} rawLongitude - input longitude
+     */
+    const updateLongitude = useCallback((rawLongitude: string) => {
         let longitude = Number(rawLongitude);
         if (rawLongitude !== "" && !isNaN(longitude) && longitude <= 180 && longitude >= -180.0) {
             setIsValidLongitude(true);
@@ -65,10 +77,15 @@ export function RestaurantFinder() {
         }
         setLongitude(rawLongitude);
     }
+    ,
+    []
+    );
 
+    /**
+     * Fetch the list of nearest restaurant with the Here API
+     */
     const getRestaurants = useCallback(
         async () => {
-
             if (!isValidLatitude || !isValidLongitude) {
                 alert("All field must be correct before looking for tasty restaurants!");
                 setIsLoading(false);
@@ -103,35 +120,25 @@ export function RestaurantFinder() {
         [isValidLatitude, isValidLongitude, latitude, longitude]
     );
 
-    function updateCurrentLocation(navigatorPosition: GeolocationPosition) {
 
+    /**
+     * Update the Current location and reset state
+     * @param navigatorPosition 
+     */
+    const updateCurrentLocation = useCallback((navigatorPosition: GeolocationPosition) => {
         let { latitude, longitude } = navigatorPosition.coords;
         updateLatitude(latitude.toString());
         updateLongitude(longitude.toString());
         setRestaurants(null);
         setIsLoading(false);
-    }
+    }, [updateLatitude, updateLongitude])
 
-    const getCurrentLocation = async () => {
+
+    /**
+     * Fetch the current location (and deal with geolocalisation permissions)
+     */
+    const getCurrentLocation = useCallback(async () => {
         setIsLoading(true);
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                updateCurrentLocation,
-                (error) => {
-                    setIsLoading(false);
-                if (error.code === error.PERMISSION_DENIED) {
-                } else {
-                    alert('Unable to find your position, try again later.');
-                }
-            }, {
-                timeout: 10000
-            });
-        } else {
-            setIsLoading(false);
-            alert("Sorry geolocation is not available for your browser!");
-        }
-
 
         if (navigator.geolocation) {
             await navigator.permissions
@@ -142,20 +149,25 @@ export function RestaurantFinder() {
                     } else if (res.state === "prompt") {
                         navigator.geolocation.getCurrentPosition(
                             updateCurrentLocation,
-                            () => { alert('Geolocation has been disabled on this page. If you are using macos, please, check your system geolocalisation preferences');},
+                            () => {
+                                alert('Geolocation has been disabled on this page. If you are using macos, please, check your system geolocalisation preferences');
+                                setIsLoading(false);
+                            },
                             {
                                 timeout: 10000
                             }
                         
                             );
                     } else if (res.state === "denied") {
+                        setIsLoading(false);
                         alert("You need to give this app the right to access your current location to do so");
                     }
                 });
         } else {
+            setIsLoading(false);
             alert("Sorry geolocation is not available!");
         }
-    }
+    }, [updateCurrentLocation]);
 
     return (
         <div

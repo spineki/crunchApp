@@ -46,10 +46,14 @@ type Props = {
     expanded: boolean;
 }
 
+/**
+ * A component to display a restaurant (row)
+ * @param props 
+ * @returns 
+ */
 export function RestaurantRow(props: Props) {
-    const { restaurant, expanded, onExpand } = props;
     const classes = useStyles();
-
+    const { restaurant, expanded, onExpand } = props;
     const place = restaurant.vicinity.split("<br/>").join(", ");
 
     return (
